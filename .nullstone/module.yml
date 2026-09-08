@@ -1,0 +1,18 @@
+org_name: nullstone
+name: gcp-gce-tailscale-ingress
+friendly_name: Tailscale Ingress (GCE)
+description: Exposes a GCE server app to a tailnet via a Tailscale Service
+category: capability
+subcategory: ingress
+provider_types:
+    - gcp
+platform: gce
+subplatform: tailscale
+type: ""
+appCategories:
+    - server
+is_public: true
+tool_name: opentofu
+include:
+    - templates/*
+source_url: https://github.com/nullstone-modules/gcp-gce-tailscale-ingress

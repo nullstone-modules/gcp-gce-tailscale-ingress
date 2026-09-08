@@ -9,13 +9,15 @@ Reaches ports bound to `127.0.0.1` on the VM, so an admin port published with
 
 ## How it works
 
-1. Connects to a `gcp-tailscale` datastore for the OAuth client secret and tailnet DNS name, and
-   grants the VM service account read access to that secret.
-2. Contributes cloud-init that runs the `tailscale/tailscale` image as `<container_name>.service`
+1. Connects to a `gcp-tailscale` datastore for the OAuth client and tailnet DNS name, and grants
+   the VM service account read access to the client secret.
+2. Creates the Tailscale Service `svc:<app>-<env>-<stack>` with the Tailscale provider, using the
+   OAuth client with only the `services` scope.
+3. Contributes cloud-init that runs the `tailscale/tailscale` image as `<container_name>.service`
    with host networking and userspace networking (no tun device, no `NET_ADMIN`). Inbound tailnet
    traffic only reaches what `serve` publishes.
-3. Renders a declarative serve config advertising `svc:<app>-<env>-<stack>` with one listener per
-   entry in `listeners`.
+4. Renders a declarative serve config advertising that service with one listener per entry in
+   `listeners`.
 
 Every VM in the managed instance group advertises the same service. Clients stick to one healthy
 host and fail over when it goes away, so the URL does not change during a rollout. Nodes register
@@ -28,8 +30,8 @@ after their GCE instance (e.g. `sftp-customer-uploads-abcde-x1y2`), which is uni
 matches the GCE console. Users never connect to a node name; they connect to the service
 `<app>-<env>-<stack>.<tailnet>.ts.net`, which is the same before, during, and after a rollout.
 
-The service must exist before hosts can advertise it: create `svc:<app>-<env>-<stack>` on the
-Services page of the admin console once per app and environment.
+The service is created by this module and removed with it. Renaming it via `service_name`
+replaces the service, so clients see a new URL.
 
 ## Tailnet prerequisites
 
@@ -37,9 +39,11 @@ In the Tailscale admin console:
 
 - MagicDNS and HTTPS certificates enabled (DNS tab) for `https` listeners.
 - The tag in `tags` (default `<stack>-<env>`) declared in `tagOwners` and owned by the OAuth client.
-- Service hosts auto-approved, or approve each VM by hand after every rollout:
+- The OAuth client has the **Auth Keys** and **Services** write scopes (see `gcp-tailscale`).
+- Service hosts auto-approved, or approve each VM by hand after every rollout. The service and its
+  hosts share the same tag, so one tag-keyed entry covers every app using that tag:
   ```json
-  "autoApprovers": { "services": { "svc:<app>-<env>-<stack>": ["tag:<stack>-<env>"] } }
+  "autoApprovers": { "services": { "tag:<stack>-<env>": ["tag:<stack>-<env>"] } }
   ```
 - A grant from users to the service, e.g. `"dst": ["svc:<app>-<env>-<stack>"]`.
 
@@ -49,7 +53,7 @@ Egress needs nothing beyond the server's Cloud NAT.
 
 | Name             | Default                                     | Description |
 |------------------|---------------------------------------------|-------------|
-| `service_name`   | `<app>-<env>-<stack>`                       | Tailscale Service name without `svc:`. Must be a DNS label and must already exist in the tailnet. |
+| `service_name`   | `{{ NULLSTONE_APP }}-{{ NULLSTONE_ENV }}-{{ NULLSTONE_STACK }}` | Tailscale Service name without `svc:`. Supports `{{ NULLSTONE_STACK }}`, `{{ NULLSTONE_APP }}`, `{{ NULLSTONE_BLOCK }}`, `{{ NULLSTONE_ENV }}`. Must resolve to a DNS label. |
 | `listeners`      | `[{ port = 443 }]`                          | Service ports. `protocol` is `https`, `http`, or `tcp`; `target` defaults to `http://127.0.0.1:8080` (use `host:port` for `tcp`). |
 | `tags`           | `[]` (datastore `default_tag`)              | Tags to advertise, without `tag:`. |
 | `image`          | `ghcr.io/tailscale/tailscale:v1.102.3`      | Tailscale image. |

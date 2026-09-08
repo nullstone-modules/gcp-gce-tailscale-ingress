@@ -20,13 +20,15 @@ variable "service_name" {
 
   description = <<EOF
 Name of the Tailscale Service (without the `svc:` prefix) that fronts this app.
-Defaults to `<app>-<env>-<stack>`. The service must exist in the tailnet before hosts can advertise it.
+Defaults to `{{ NULLSTONE_APP }}-{{ NULLSTONE_ENV }}-{{ NULLSTONE_STACK }}`.
+The resolved name must be a DNS label (lowercase letters, digits, hyphens; 1-63 characters).
+The service is created by this module; changing the name replaces it.
+The following identifiers are supported for interpolation:
+  {{ NULLSTONE_STACK }}
+  {{ NULLSTONE_APP }}
+  {{ NULLSTONE_BLOCK }}
+  {{ NULLSTONE_ENV }}
 EOF
-
-  validation {
-    condition     = var.service_name == "" || can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.service_name))
-    error_message = "service_name must be a DNS label: lowercase letters, digits, and hyphens, 1-63 characters, not starting or ending with a hyphen."
-  }
 }
 
 variable "listeners" {

@@ -4,8 +4,7 @@
 // Nodes themselves are named after their GCE instance (see templates/tailscale-up.sh.tpl); a node
 // name must not equal the service name or the two collide in MagicDNS.
 locals {
-  // Default naming matches gcp-gke-tailscale-ingress: <app>-<env>-<stack>. var.service_name overrides.
-  service_name = coalesce(var.service_name, "${local.block_name}-${local.env_name}-${local.stack_name}")
+  // local.service_name is resolved in service-name.tf.
   service_fqdn = "${local.service_name}.${local.tailnet_dns_name}"
 
   // ipn.ServeConfig shape. Built per protocol and merged because conditional branches must share a type.

@@ -10,5 +10,9 @@ terraform {
     random = {
       source = "hashicorp/random"
     }
+    tailscale = {
+      source  = "tailscale/tailscale"
+      version = ">= 0.29"
+    }
   }
 }

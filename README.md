@@ -21,6 +21,16 @@ Every VM in the managed instance group advertises the same service. Clients stic
 host and fail over when it goes away, so the URL does not change during a rollout. Nodes register
 as ephemeral and are removed from the tailnet once offline.
 
+## Node names vs. the service name
+
+Each VM is a separate tailnet node, so the Machines page shows one entry per VM. Nodes are named
+after their GCE instance (e.g. `sftp-customer-uploads-abcde-x1y2`), which is unique per VM and
+matches the GCE console. Users never connect to a node name; they connect to the service
+`<app>-<env>-<stack>.<tailnet>.ts.net`, which is the same before, during, and after a rollout.
+
+The service must exist before hosts can advertise it: create `svc:<app>-<env>-<stack>` on the
+Services page of the admin console once per app and environment.
+
 ## Tailnet prerequisites
 
 In the Tailscale admin console:
@@ -39,6 +49,7 @@ Egress needs nothing beyond the server's Cloud NAT.
 
 | Name             | Default                                     | Description |
 |------------------|---------------------------------------------|-------------|
+| `service_name`   | `<app>-<env>-<stack>`                       | Tailscale Service name without `svc:`. Must be a DNS label and must already exist in the tailnet. |
 | `listeners`      | `[{ port = 443 }]`                          | Service ports. `protocol` is `https`, `http`, or `tcp`; `target` defaults to `http://127.0.0.1:8080` (use `host:port` for `tcp`). |
 | `tags`           | `[]` (datastore `default_tag`)              | Tags to advertise, without `tag:`. |
 | `image`          | `ghcr.io/tailscale/tailscale:v1.102.3`      | Tailscale image. |

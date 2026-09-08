@@ -11,9 +11,10 @@ locals {
   service_unit = "${var.container_name}.service"
 
   tailscale_up_sh = templatefile("${path.module}/templates/tailscale-up.sh.tpl", {
-    container_name    = var.container_name
-    image             = var.image
-    hostname          = local.service_name
+    container_name = var.container_name
+    image          = var.image
+    // Node hostname is the GCE instance name (read from metadata at boot); this is only the fallback.
+    fallback_hostname = "${local.service_name}-node"
     advertise_tags    = local.advertise_tags
     secrets_mount     = local.secrets_mount
     authkey_file      = local.authkey_file

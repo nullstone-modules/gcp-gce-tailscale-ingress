@@ -1,9 +1,11 @@
 // The app is reached through a Tailscale Service (svc:<name>) rather than a node name.
 // Every VM in the MIG advertises the same service, so the URL is stable across rollouts:
 // clients stick to one healthy host and fail over when it goes away.
+// Nodes themselves are named after their GCE instance (see templates/tailscale-up.sh.tpl); a node
+// name must not equal the service name or the two collide in MagicDNS.
 locals {
-  // Same naming as gcp-gke-tailscale-ingress: <app>-<env>-<stack>.
-  service_name = "${local.block_name}-${local.env_name}-${local.stack_name}"
+  // Default naming matches gcp-gke-tailscale-ingress: <app>-<env>-<stack>. var.service_name overrides.
+  service_name = coalesce(var.service_name, "${local.block_name}-${local.env_name}-${local.stack_name}")
   service_fqdn = "${local.service_name}.${local.tailnet_dns_name}"
 
   // ipn.ServeConfig shape. Built per protocol and merged because conditional branches must share a type.

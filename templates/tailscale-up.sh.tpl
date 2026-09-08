@@ -17,12 +17,17 @@ umask 022
 
 mkdir -p "${state_dir}"
 
+# Each VM is its own tailnet node. Name it after the GCE instance so node names are unique per VM,
+# match the GCE console, and never collide with the Tailscale Service name users connect to.
+instance_name="$(curl -sf -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/name || true)"
+node_hostname="$${instance_name:-${fallback_hostname}}"
+
 docker rm -f ${container_name} 2>/dev/null || true
 docker run -d --name ${container_name} --restart unless-stopped \
   --network host \
   --env-file "$${env_file}" \
   -e TS_USERSPACE=true \
-  -e TS_HOSTNAME=${hostname} \
+  -e TS_HOSTNAME="$${node_hostname}" \
   -e TS_STATE_DIR=/var/lib/tailscale \
   -e TS_AUTH_ONCE=true \
   -e TS_ACCEPT_DNS=false \

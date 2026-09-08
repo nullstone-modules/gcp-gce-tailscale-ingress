@@ -14,6 +14,21 @@ locals {
   service_account_email = var.app_metadata["service_account_email"]
 }
 
+variable "service_name" {
+  type    = string
+  default = ""
+
+  description = <<EOF
+Name of the Tailscale Service (without the `svc:` prefix) that fronts this app.
+Defaults to `<app>-<env>-<stack>`. The service must exist in the tailnet before hosts can advertise it.
+EOF
+
+  validation {
+    condition     = var.service_name == "" || can(regex("^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$", var.service_name))
+    error_message = "service_name must be a DNS label: lowercase letters, digits, and hyphens, 1-63 characters, not starting or ending with a hyphen."
+  }
+}
+
 variable "listeners" {
   type = list(object({
     port     = number
